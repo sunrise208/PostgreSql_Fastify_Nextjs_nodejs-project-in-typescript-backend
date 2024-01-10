@@ -1,5 +1,6 @@
 const Fastify = require("fastify");
 const { Client } = require("pg");
+const bcrypt = require("bcryptjs");
 
 const fastifyFormbody = require("./fastifyFormBody");
 
@@ -17,13 +18,17 @@ const client = new Client({
 client.connect().then(() => console.log("postgreSql is connected..."));
 
 fastify.post("/auth/register", async function (req, reply) {
-  client.query(
-    "INSERT INTO users.users (name, email, password) VALUES($1, $2, $3) RETURNING '*'",
-    [req.body.name, req.body.email, req.body.password],
-    function onResult(err, result) {
-      reply.send(err || result);
-    }
-  );
+  bcrypt.genSalt(10, function (err, salt) {
+    bcrypt.hash(req.body.password, salt, function (err, hash) {
+      client.query(
+        "INSERT INTO users.users (name, email, password) VALUES($1, $2, $3) RETURNING '*'",
+        [req.body.name, req.body.email, hash],
+        function onResult(err, result) {
+          reply.send(err || result);
+        }
+      );
+    });
+  });
 });
 
 try {
