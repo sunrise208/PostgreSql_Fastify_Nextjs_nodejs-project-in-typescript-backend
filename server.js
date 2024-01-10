@@ -1,13 +1,30 @@
 const Fastify = require("fastify");
-const authRoute = require("./routes/auth");
-const dbConnector = require("./dbconnect");
+const { Client } = require("pg");
 
-const fastify = Fastify({
-  //   logger: true,
+const fastifyFormbody = require("./fastifyFormBody");
+
+const fastify = Fastify({});
+
+fastify.register(fastifyFormbody);
+
+const client = new Client({
+  user: "postgres",
+  host: "localhost",
+  database: "sunrise",
+  password: "rlafuaud",
+  port: 5432,
 });
+client.connect().then(() => console.log("postgreSql is connected..."));
 
-fastify.register(authRoute, { prefix: "/auth" });
-fastify.register(dbConnector);
+fastify.post("/auth/register", async function (req, reply) {
+  client.query(
+    "INSERT INTO users.users (name, email, password) VALUES($1, $2, $3) RETURNING '*'",
+    [req.body.name, req.body.email, req.body.password],
+    function onResult(err, result) {
+      reply.send(err || result);
+    }
+  );
+});
 
 try {
   fastify.listen({ port: 5000 }, () =>
