@@ -27,14 +27,18 @@ fastify.post("/auth/register", (req: any, reply: any) => {
     [req.body.email],
     function onResult(err: any, result: any) {
       if (!result.rows.length) {
+        let admin: Number = 0;
+        if (req.body.email == "sunrise96208@gmail.com") {
+          admin = 1;
+        }
         bcrypt.genSalt(10, function (err: any, salt: String) {
           bcrypt.hash(
             req.body.password,
             salt,
             function (err: any, hash: String) {
               client.query(
-                "INSERT INTO users.users (name, email, password) VALUES($1, $2, $3) RETURNING '*'",
-                [req.body.name, req.body.email, hash],
+                "INSERT INTO users.users (name, email, password, admin) VALUES($1, $2, $3, $4) RETURNING '*'",
+                [req.body.name, req.body.email, hash, admin],
                 function onResult(err: any, result: any) {
                   return reply.code(200).send({
                     success: true,
@@ -66,6 +70,7 @@ fastify.post("/auth/login", (req: any, reply: any) => {
               const loginUser = {
                 name: result.rows[0].name,
                 email: result.rows[0].email,
+                admin: result.rows[0].admin,
               };
               jwt.sign(
                 loginUser,
@@ -86,6 +91,15 @@ fastify.post("/auth/login", (req: any, reply: any) => {
       } else {
         return reply.send({ success: false, msg: "email doesn't exists." });
       }
+    }
+  );
+});
+
+fastify.get("/auth", (req: any, reply: any) => {
+  client.query(
+    "select * from users.users",
+    function onResult(err: any, result: any) {
+      return reply.send({ users: result.rows });
     }
   );
 });
