@@ -104,6 +104,16 @@ fastify.get("/auth", (req: any, reply: any) => {
   );
 });
 
+fastify.put("/auth/update_admin", (req: any, reply: any) => {
+  client.query(
+    "update users.users set admin=$1 where id=$2",
+    [req.body.admin, req.body.id],
+    function onResult(err: any, result: any) {
+      return reply.send({ users: result.rows });
+    }
+  );
+});
+
 try {
   fastify.listen({ port: 5000 }, () =>
     console.log("fastify server is running on port 5000...")
